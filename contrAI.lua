@@ -145,7 +145,7 @@ function getTileCollisionCode(x, y)
 end
 
 function isWithinRange(x, y)
-        return x > PlayerOnscreenX - (InputRadius * 16) and x < PlayerOnScreenX + (InputRadius * 16)
+        return x > PlayerOnscreenX - (InputRadius * 16) and x < PlayerOnscreenX + (InputRadius * 16)
                 and y > PlayerOnscreenY - (InputRadius * 16) and y < PlayerOnscreenY + (InputRadius * 16)
 end
 
