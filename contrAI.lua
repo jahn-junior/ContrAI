@@ -53,6 +53,8 @@ MaxNodes = 1000000
 
 -- TODO: Find memory addresses for player x and y
 function getPlayerPos()
+        HorizontalScroll = memory.readbyte(0xFD)
+        VerticalScroll = memory.readbyte(0xFC)
         PlayerOnscreenX = memory.readbyte(0x0334)
         PlayerOnscreenY = memory.readbyte(0x031A)
 end
@@ -63,20 +65,20 @@ function measureFitness()
         Fitness = (LevelScreenNumber << 8) + LevelScreenScrollOffset
 end
 
-function getCollisionData()
-        HorizontalScroll = memory.readbyte(0xFD)
-        VerticalScroll = memory.readbyte(0xFC)
+function getSprites()
 
-        for i = 0, 300, 16 do
-                for j = 0, 300, 16 do
-                        getTileCollisionCode(i - math.fmod(HorizontalScroll, 16), j - math.fmod(VerticalScroll, 16))
-                end
+        local sprites = {}
+
+        for i = 0, 0xF do
+                local enemyX = memory.readbyte(0x0324 + i)
+                local enemyY = memory.readbyte(0x033E + i)
+                sprites[#sprites + 1] = {["x"] = enemyX, ["y"] = enemyY}
         end
+
+        return sprites
 end
 
--- Reads BG_COLLISION_DATA from memory and returns the tile type.
--- 0 = empty, 1 = floor tile, 2 = water tile, 3 = solid tile
-
+-- Reads BG_COLLISION_DATA from memory and returns the tile type (0 = empty, 1 = floor).
 -- Adapted from https://github.com/vermiceli/nes-contra-us
 function getTileCollisionCode(x, y)
         PPUSettings = memory.readbyte(0xFF)
@@ -121,7 +123,7 @@ function getTileCollisionCode(x, y)
         collisionCode = collisionCode & 0x03
 
         -- Draws collision rectangles onscreen for debugging
-        local floorColor = 0x508fbc8f
+        local floorColor = 0x508FBC8F
         local waterColor = 0x500096FF
         local solidColor = 0x50A9A9A9
         local tileColor = 0x0
@@ -135,22 +137,48 @@ function getTileCollisionCode(x, y)
 
         if collisionCode ~= 0 then
                 gui.drawRectangle(x, y, 16, 16, tileColor)
+                return 1
+        else
+                return 0
         end
 
 end
 
-function getInputs()
-        getPlayerPos()
-        getCollisionData()
+function isWithinRange(x, y)
+        return x > PlayerOnscreenX - (InputRadius * 16) and x < PlayerOnScreenX + (InputRadius * 16)
+                and y > PlayerOnscreenY - (InputRadius * 16) and y < PlayerOnscreenY + (InputRadius * 16)
 end
 
--- TODO: Display fitness and input neurons correctly
+function getInputs()
+        getPlayerPos()
+        Sprites = getSprites()
+
+        local inputs = {}
+
+        for y = 0, 300, 16 do
+                for x = 0, 300, 16 do
+                        inputs[#inputs + 1] = 0
+
+                        local tile = getTileCollisionCode(x - math.fmod(HorizontalScroll, 16), y - math.fmod(VerticalScroll, 16))
+                        if tile == 1 and isWithinRange(x, y) then
+                                inputs[#inputs] = 1
+                        end
+
+                        for i = 1, #Sprites do
+                                if isWithinRange(Sprites[i]["x"], Sprites[i]["y"]) then
+                                        inputs[#inputs] = -1
+                                end
+                        end
+                end
+        end
+
+end
+
+
 
 while true do
         measureFitness()
-        getCollisionData()
-
-        --console.writeline("Fitness: " .. Fitness)
+        Inputs = getInputs()
 
         emu.frameadvance()
 end
