@@ -54,8 +54,8 @@ MaxNodes = 1000000
 
 -- TODO: Find memory addresses for player x and y
 function getPlayerPos()
-        PlayerOnscreenX = emu.read(0x0334)
-        PlayerOnscreenY = emu.read(0x031A)
+        PlayerOnscreenX = memory.readbyte(0x0334)
+        PlayerOnscreenY = memory.readbyte(0x031A)
 end
 
 function measureFitness()
