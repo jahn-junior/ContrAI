@@ -67,18 +67,19 @@ function getCollisionData()
         HorizontalScroll = memory.readbyte(0xFD)
         VerticalScroll = memory.readbyte(0xFC)
 
-        Inputs = {{}}
+        Inputs = {}
 
-        local x = 1
-        local y = 1
+        for x = 1, 14 do
+                Inputs[x] = {}
+                for y = 1, 16 do
+                        Inputs[x][y] = 0
+                end
+        end
 
         for i = 0, 300, 16 do
-                Inputs[y] = {}
                 for j = 0, 300, 16 do
                         Inputs[y][x] = getTileCollisionCode(i - math.fmod(HorizontalScroll, 16), j - math.fmod(VerticalScroll, 16))
-                        x = x + 1
                 end
-                y = y + 1
         end
 end
 
