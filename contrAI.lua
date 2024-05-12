@@ -160,9 +160,10 @@ while true do
         getCollisionData()
 
         for i = 1, 14 do
-                for j = 1, 16 do
-                        console.writeline("{" .. Inputs[i][j] .. "} ")
-                end
+                console.writeline("{" .. Inputs[i][1] .. "} " .. "{" .. Inputs[i][2] .. "} " .. "{" .. Inputs[i][3] .. "} " .. "{" .. Inputs[i][4] .. "} " ..
+                                  "{" .. Inputs[i][5] .. "} " .. "{" .. Inputs[i][6] .. "} " .. "{" .. Inputs[i][7] .. "} " .. "{" .. Inputs[i][8] .. "} " ..
+                                  "{" .. Inputs[i][9] .. "} " .. "{" .. Inputs[i][10] .. "} " .. "{" .. Inputs[i][11] .. "} " .. "{" .. Inputs[i][12] .. "} " ..
+                                  "{" .. Inputs[i][13] .. "} " .. "{" .. Inputs[i][14] .. "} " .. "{" .. Inputs[i][15] .. "} " .. "{" .. Inputs[i][16] .. "} ")
         end
 
         --console.writeline("Fitness: " .. Fitness)
