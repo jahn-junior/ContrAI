@@ -67,24 +67,10 @@ function getCollisionData()
         HorizontalScroll = memory.readbyte(0xFD)
         VerticalScroll = memory.readbyte(0xFC)
 
-        Inputs = {}
-
-        for y = 1, 14 do
-                Inputs[y] = {}
-                for x = 1, 16 do
-                        Inputs[y][x] = 0
-                end
-        end
-
-        local y = 1
-        local x = 1
-
         for i = 0, 300, 16 do
                 for j = 0, 300, 16 do
-                        Inputs[y][x] = getTileCollisionCode(i - math.fmod(HorizontalScroll, 16), j - math.fmod(VerticalScroll, 16))
-                        x = x + 1
+                        getTileCollisionCode(i - math.fmod(HorizontalScroll, 16), j - math.fmod(VerticalScroll, 16))
                 end
-                y = y + 1
         end
 end
 
@@ -151,7 +137,6 @@ function getTileCollisionCode(x, y)
                 gui.drawRectangle(x, y, 16, 16, tileColor)
         end
 
-        return collisionCode
 end
 
 function getInputs()
@@ -164,13 +149,6 @@ end
 while true do
         measureFitness()
         getCollisionData()
-
-        for i = 1, 14 do
-                console.writeline("{" .. Inputs[i][1] .. "} " .. "{" .. Inputs[i][2] .. "} " .. "{" .. Inputs[i][3] .. "} " .. "{" .. Inputs[i][4] .. "} " ..
-                                  "{" .. Inputs[i][5] .. "} " .. "{" .. Inputs[i][6] .. "} " .. "{" .. Inputs[i][7] .. "} " .. "{" .. Inputs[i][8] .. "} " ..
-                                  "{" .. Inputs[i][9] .. "} " .. "{" .. Inputs[i][10] .. "} " .. "{" .. Inputs[i][11] .. "} " .. "{" .. Inputs[i][12] .. "} " ..
-                                  "{" .. Inputs[i][13] .. "} " .. "{" .. Inputs[i][14] .. "} " .. "{" .. Inputs[i][15] .. "} " .. "{" .. Inputs[i][16] .. "} ")
-        end
 
         --console.writeline("Fitness: " .. Fitness)
 
