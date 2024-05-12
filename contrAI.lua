@@ -54,12 +54,14 @@ MaxNodes = 1000000
 
 -- TODO: Find memory addresses for player x and y
 function getPlayerPos()
-        VerticalScroll = emu.read(0xFC, emu.memType.cpu)
-        HorizontalScroll = emu.read(0xFD, emu.memType.cpu)
-        PlayerOnscreenX = emu.read(0x0334, emu.memType.cpu)
-        PlayerOnscreenY = emu.read(0x031A, emu.memType.cpu)
-        PlayerX = HorizontalScroll + PlayerOnscreenX
-        PlayerY = VerticalScroll + PlayerOnscreenY
+        PlayerOnscreenX = emu.read(0x0334)
+        PlayerOnscreenY = emu.read(0x031A)
+end
+
+function measureFitness()
+        LevelScreenNumber = memory.readbyte(0x64)
+        LevelScreenScrollOffset = memory.readbyte(0x65)
+        Fitness = (256 * LevelScreenNumber) + LevelScreenScrollOffset
 end
 
 function getTile(dx, dy)
@@ -75,5 +77,5 @@ end
 
 while true do
         getPlayerPos()
-        console.writeline("Fitness: " .. PlayerX)
+        console.writeline("Fitness: " .. Fitness)
 end
