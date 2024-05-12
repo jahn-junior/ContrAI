@@ -69,17 +69,22 @@ function getCollisionData()
 
         Inputs = {}
 
-        for x = 1, 14 do
-                Inputs[x] = {}
-                for y = 1, 16 do
-                        Inputs[x][y] = 0
+        for y = 1, 14 do
+                Inputs[y] = {}
+                for x = 1, 16 do
+                        Inputs[y][x] = 0
                 end
         end
+
+        local y = 1
+        local x = 1
 
         for i = 0, 300, 16 do
                 for j = 0, 300, 16 do
                         Inputs[y][x] = getTileCollisionCode(i - math.fmod(HorizontalScroll, 16), j - math.fmod(VerticalScroll, 16))
+                        x = x + 1
                 end
+                y = y + 1
         end
 end
 
