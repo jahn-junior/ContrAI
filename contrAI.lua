@@ -64,10 +64,21 @@ function measureFitness()
 end
 
 function getCollisionData()
+        HorizontalScroll = memory.readbyte(0xFD)
+        VerticalScroll = memory.readbyte(0xFC)
+
+        Inputs = {{}}
+
+        local x = 1
+        local y = 1
+
         for i = 0, 300, 16 do
+                Inputs[y] = {}
                 for j = 0, 300, 16 do
-                        getTileCollisionCode(i - math.fmod(HorizontalScroll, 16), j - math.fmod(VerticalScroll, 16))
+                        Inputs[y][x] = getTileCollisionCode(i - math.fmod(HorizontalScroll, 16), j - math.fmod(VerticalScroll, 16))
+                        x = x + 1
                 end
+                y = y + 1
         end
 end
 
@@ -76,8 +87,6 @@ end
 
 -- Adapted from https://github.com/vermiceli/nes-contra-us
 function getTileCollisionCode(x, y)
-        HorizontalScroll = memory.readbyte(0xFD)
-        VerticalScroll = memory.readbyte(0xFC)
         PPUSettings = memory.readbyte(0xFF)
         
         local adjustedY = y + VerticalScroll
@@ -119,6 +128,7 @@ function getTileCollisionCode(x, y)
 
         collisionCode = collisionCode & 0x03
 
+        -- Draws collision rectangles onscreen for debugging
         local floorColor = 0x508fbc8f
         local waterColor = 0x500096FF
         local solidColor = 0x50A9A9A9
@@ -134,6 +144,8 @@ function getTileCollisionCode(x, y)
         if collisionCode ~= 0 then
                 gui.drawRectangle(x, y, 16, 16, tileColor)
         end
+
+        return collisionCode
 end
 
 function getInputs()
@@ -147,7 +159,13 @@ while true do
         measureFitness()
         getCollisionData()
 
-        console.writeline("Fitness: " .. Fitness)
+        for i = 1, 14 do
+                for j = 1, 16 do
+                        console.writeline("{" .. Inputs[i][j] .. "} ")
+                end
+        end
+
+        --console.writeline("Fitness: " .. Fitness)
 
         emu.frameadvance()
 end
