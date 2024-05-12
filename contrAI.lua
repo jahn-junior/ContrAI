@@ -5,10 +5,8 @@
 -- of playing Konami's "Contra" for the NES. Designed to be used as
 -- a plugin for the BizHawk emulator.
 
-if gameinfo.getromname() == "Contra (USA)" then
-        Filename = "level-start.state"
-        ButtonNames = { "A", "B", "Up", "Down", "Left", "Right" }
-end
+Filename = "level-start.state"
+ButtonNames = { "A", "B", "Up", "Down", "Left", "Right" }
 
 -- Limited inputs to those within 6 tiles of the player
 -- so as to reduce complexity
@@ -42,6 +40,7 @@ MaxNodes = 1000000
 -- Each tile is 8x8 pixels.
 --
 -- Code needs to pay attention to tiles 0x01 - 0x05 (floor tiles)
+--                                      0x06 - 0xF8 (empty tiles)
 --                                      0xF9 - 0xFE (water tiles)
 --                                             0xFF (solid collision)
 
@@ -61,21 +60,94 @@ end
 function measureFitness()
         LevelScreenNumber = memory.readbyte(0x64)
         LevelScreenScrollOffset = memory.readbyte(0x65)
-        Fitness = (256 * LevelScreenNumber) + LevelScreenScrollOffset
+        Fitness = (LevelScreenNumber << 8) + LevelScreenScrollOffset
 end
 
-function getTile(dx, dy)
-        -- TODO: Find out how tiles are mapped in RAM
+function getCollisionData()
+        for i = 0, 300, 16 do
+                for j = 0, 300, 16 do
+                        getTileCollisionCode(i - math.fmod(HorizontalScroll, 16), j - math.fmod(VerticalScroll, 16))
+                end
+        end
+end
+
+-- Reads BG_COLLISION_DATA from memory and returns the tile type.
+-- 0 = empty, 1 = floor tile, 2 = water tile, 3 = solid tile
+
+-- Adapted from https://github.com/vermiceli/nes-contra-us
+function getTileCollisionCode(x, y)
+        HorizontalScroll = memory.readbyte(0xFD)
+        VerticalScroll = memory.readbyte(0xFC)
+        PPUSettings = memory.readbyte(0xFF)
+        
+        local adjustedY = y + VerticalScroll
+        local adjustedX = x + HorizontalScroll
+
+        if adjustedY >= 0xF0 then
+                adjustedY = adjustedY + 0x0F
+                adjustedY = adjustedY - 255
+        end
+
+        local nameTable = (PPUSettings ~ 0x00) & 0x01
+
+        if adjustedX > 255 then
+                nameTable = nameTable ~ 1
+                adjustedX = adjustedX - 255
+        end
+
+        adjustedY = (adjustedY >> 2) & 0x3C
+        adjustedX = adjustedX >> 4
+        local bgCollisionOffset = (adjustedX >> 2) | adjustedY
+
+        if nameTable == 1 then
+                bgCollisionOffset = bgCollisionOffset | 0x40
+        end
+
+        local collisionCodeByte = memory.readbyte(0x680 + bgCollisionOffset)
+        adjustedX = adjustedX & 0x03
+        local collisionCode = 0
+
+        if adjustedX == 0 then
+                collisionCode = collisionCodeByte >> 6
+        elseif adjustedX == 1 then
+                collisionCode = collisionCodeByte >> 4
+        elseif adjustedX == 2 then
+                collisionCode = collisionCodeByte >> 2
+        else
+                collisionCode = collisionCodeByte
+        end
+
+        collisionCode = collisionCode & 0x03
+
+        local floorColor = 0x508fbc8f
+        local waterColor = 0x500096FF
+        local solidColor = 0x50A9A9A9
+        local tileColor = 0x0
+        if collisionCode == 0x01 then
+            tileColor = floorColor
+        elseif collisionCode == 0x02 then
+            tileColor = waterColor
+        elseif collisionCode == 0x03 then
+            tileColor = solidColor
+        end
+
+        if collisionCode ~= 0 then
+                gui.drawRectangle(x, y, 16, 16, tileColor)
+        end
 end
 
 function getInputs()
-        -- TODO: Finish called functions
         getPlayerPos()
+        getCollisionData()
 end
 
 -- TODO: Display fitness and input neurons correctly
 
 while true do
-        getPlayerPos()
+        measureFitness()
+        getCollisionData()
+
         console.writeline("Fitness: " .. Fitness)
+
+        emu.frameadvance()
 end
