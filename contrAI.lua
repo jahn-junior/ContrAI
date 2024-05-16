@@ -5,7 +5,7 @@
 -- of playing Konami's "Contra" for the NES. Designed to be used as
 -- a plugin for the BizHawk emulator.
 
-Filename = "level-start.state"
+Filename = "level-start.State"
 ButtonNames = { "A", "B", "Up", "Down", "Left", "Right" }
 
 -- Limited inputs to those within 6 tiles of the player
@@ -125,21 +125,7 @@ function getTileCollisionCode(x, y)
 
         collisionCode = collisionCode & 0x03
 
-        -- Draws collision rectangles onscreen for debugging
-        local floorColor = 0x508FBC8F
-        local waterColor = 0x500096FF
-        local solidColor = 0x50A9A9A9
-        local tileColor = 0x0
-        if collisionCode == 0x01 then
-                tileColor = floorColor
-        elseif collisionCode == 0x02 then
-                tileColor = waterColor
-        elseif collisionCode == 0x03 then
-                tileColor = solidColor
-        end
-
         if collisionCode ~= 0 then
-                gui.drawRectangle(x, y, 16, 16, tileColor)
                 return 1
         else
                 return 0
@@ -147,8 +133,8 @@ function getTileCollisionCode(x, y)
 end
 
 function isWithinRange(x, y)
-        return x > PlayerOnscreenX - (InputRadius * 16) and x < PlayerOnscreenX + (InputRadius * 16)
-            and y > PlayerOnscreenY - (InputRadius * 16) and y < PlayerOnscreenY + (InputRadius * 16)
+        return x >= PlayerOnscreenX - (InputRadius * 16) and x <= PlayerOnscreenX + (InputRadius * 16)
+            and y >= PlayerOnscreenY - ((InputRadius + 1) * 16) and y <= PlayerOnscreenY + (InputRadius * 16)
 end
 
 function getInputs()
@@ -159,7 +145,9 @@ function getInputs()
 
         for y = 0, 300, 16 do
                 for x = 0, 300, 16 do
-                        inputs[#inputs + 1] = 0
+                        if isWithinRange(x, y) then
+				inputs[#inputs + 1] = 0
+			end
 
                         local tile = getTileCollisionCode(x - math.fmod(HorizontalScroll, 16),
                                 y - math.fmod(VerticalScroll, 16))
@@ -176,6 +164,8 @@ function getInputs()
                         end
                 end
         end
+	
+	return inputs
 end
 
 function sigmoid(x)
@@ -964,7 +954,7 @@ function displayGenome(genome)
                 end
         end
 
-        gui.drawBox(50 - BoxRadius * 5 - 3, 70 - BoxRadius * 5 - 3, 50 + BoxRadius * 5 + 2, 70 + BoxRadius * 5 + 2,
+        gui.drawBox(50 - InputRadius * 5 - 3, 70 - InputRadius * 5 - 3, 50 + InputRadius * 5 + 2, 70 + InputRadius * 5 + 2,
                 0xFF000000, 0x80808080)
         for n, cell in pairs(cells) do
                 if n > Inputs or cell.value ~= 0 then
