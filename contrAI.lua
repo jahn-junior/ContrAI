@@ -55,7 +55,6 @@ MaxNodes = 1000000
 -- and the Level Screen Scroll Offset (0x65 in RAM).
 
 
--- TODO: Find memory addresses for player x and y
 function getPlayerPos()
         HorizontalScroll = memory.readbyte(0xFD)
         VerticalScroll = memory.readbyte(0xFC)
@@ -73,8 +72,8 @@ function getSprites()
         local sprites = {}
 
         for i = 0, 0xF do
-                local enemyX = memory.readbyte(0x0324 + i)
-                local enemyY = memory.readbyte(0x033E + i)
+                local enemyX = memory.readbyte(0x033E + i)
+                local enemyY = memory.readbyte(0x0324 + i)
                 sprites[#sprites + 1] = { ["x"] = enemyX, ["y"] = enemyY }
         end
 
@@ -84,6 +83,11 @@ end
 -- Reads BG_COLLISION_DATA from memory and returns the tile type (0 = empty, 1 = floor).
 -- Adapted from https://github.com/vermiceli/nes-contra-us
 function getTileCollisionCode(x, y)
+
+	if x < 0 or y < 0 or x > 300 or y > 300 then
+		return 0
+	end
+
         PPUSettings = memory.readbyte(0xFF)
 
         local adjustedY = y + VerticalScroll
@@ -132,39 +136,31 @@ function getTileCollisionCode(x, y)
         end
 end
 
-function isWithinRange(x, y)
-        return x >= PlayerOnscreenX - (InputRadius * 16) and x <= PlayerOnscreenX + (InputRadius * 16)
-            and y >= PlayerOnscreenY - ((InputRadius + 1) * 16) and y <= PlayerOnscreenY + (InputRadius * 16)
-end
-
 function getInputs()
         getPlayerPos()
         Sprites = getSprites()
 
         local inputs = {}
 
-        for y = 0, 300, 16 do
-                for x = 0, 300, 16 do
-                        if isWithinRange(x, y) then
-				inputs[#inputs + 1] = 0
-			end
+        for y = PlayerOnscreenY - (InputRadius * 16),  PlayerOnscreenY + (InputRadius * 16), 16 do
+                for x = PlayerOnscreenX - (InputRadius * 16), PlayerOnscreenX + (InputRadius * 16), 16 do
+
+			inputs[#inputs + 1] = 0
 
                         local tile = getTileCollisionCode(x - math.fmod(HorizontalScroll, 16),
                                 y - math.fmod(VerticalScroll, 16))
-                        if tile == 1 and isWithinRange(x, y) then
+                        if tile == 1 then
                                 inputs[#inputs] = 1
                         end
 
                         for i = 1, #Sprites do
-                                if isWithinRange(Sprites[i]["x"], Sprites[i]["y"]) then
-                                        if math.abs(y - Sprites[i]["y"]) <= 8 and math.abs(x - Sprites[i]["x"]) <= 8 then
-                                                inputs[#inputs] = -1
-                                        end
-                                end
+                                if math.abs(y - Sprites[i]["y"]) <= 8 and math.abs(x - Sprites[i]["x"]) <= 8 then
+                                	inputs[#inputs] = -1
+                        	end
                         end
                 end
         end
-	
+
 	return inputs
 end
 
