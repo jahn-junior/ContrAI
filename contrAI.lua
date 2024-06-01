@@ -17,8 +17,6 @@ InputSize = (InputRadius * 2 + 1) * (InputRadius * 2 + 1)
 Inputs = InputSize + 1
 Outputs = #ButtonNames
 
-LastScreenX = 3072
-
 -- Variables for use in NEAT
 
 Population = 300
@@ -1160,7 +1158,7 @@ while true do
         local timeoutBonus = pool.currentFrame / 4
         if timeout + timeoutBonus <= 0 then
                 local fitness = rightmost - pool.currentFrame / 2
-                if fitness > LastScreenX then
+                if memory.readbyte(0x64) == 13 then
                         fitness = fitness + 1000
                 end
                 if fitness == 0 then
