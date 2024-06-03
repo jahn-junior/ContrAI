@@ -12,8 +12,10 @@ ButtonNames = { "A", "B", "Up", "Down", "Left", "Right" }
 -- so as to reduce complexity
 InputRadius = 6
 
+-- Inputs are a square 13x13 grid
 InputSize = (InputRadius * 2 + 1) * (InputRadius * 2 + 1)
 
+-- Adds bias input
 Inputs = InputSize + 1
 Outputs = #ButtonNames
 
@@ -52,7 +54,7 @@ MaxNodes = 1000000
 -- This can be measured using the Level Screen Number (0x64 in RAM)
 -- and the Level Screen Scroll Offset (0x65 in RAM).
 
-
+-- Pulls relevant player sprite information from console RAM.
 function getPlayerPos()
         HorizontalScroll = memory.readbyte(0xFD)
         VerticalScroll = memory.readbyte(0xFC)
@@ -60,12 +62,15 @@ function getPlayerPos()
         PlayerOnscreenY = memory.readbyte(0x031A)
 end
 
+-- Calculates fitness based on level progress.
+-- Fitness = (Level screen number * 256) + Level screen scroll offset
 function measureFitness()
         LevelScreenNumber = memory.readbyte(0x64)
         LevelScreenScrollOffset = memory.readbyte(0x65)
         return (LevelScreenNumber << 8) + LevelScreenScrollOffset
 end
 
+-- Reads relevant enemy sprite information from console RAM.
 function getSprites()
         local sprites = {}
 
@@ -79,7 +84,6 @@ function getSprites()
 end
 
 -- Reads BG_COLLISION_DATA from memory and returns the tile type (0 = empty, 1 = floor).
--- Adapted from https://github.com/vermiceli/nes-contra-us
 function getTileCollisionCode(x, y)
 
 	if x < 0 or y < 0 or x > 300 or y > 300 then
@@ -134,6 +138,7 @@ function getTileCollisionCode(x, y)
         end
 end
 
+-- Translates data gathered in the above functions into network inputs.
 function getInputs()
         getPlayerPos()
         Sprites = getSprites()
@@ -145,12 +150,14 @@ function getInputs()
 
 			inputs[#inputs + 1] = 0
 
+                        -- Checks tile collision data
                         local tile = getTileCollisionCode(x - math.fmod(HorizontalScroll, 16),
                                 y - math.fmod(VerticalScroll, 16))
                         if tile == 1 then
                                 inputs[#inputs] = 1
                         end
 
+                        -- Checks if any enemies are in the current tile
                         for i = 1, #Sprites do
                                 if math.abs(y - Sprites[i]["y"]) <= 8 and math.abs(x - Sprites[i]["x"]) <= 8 then
                                 	inputs[#inputs] = -1
@@ -829,6 +836,7 @@ function evaluateCurrent()
         inputs = getInputs()
         controller = evaluateNetwork(genome.network, inputs)
 
+        -- Handles simultaneous opposing cardinal directions
         if controller["P1 Left"] and controller["P1 Right"] then
                 controller["P1 Left"] = false
                 controller["P1 Right"] = false
